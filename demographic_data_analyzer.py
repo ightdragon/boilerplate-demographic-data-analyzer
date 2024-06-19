@@ -6,7 +6,7 @@ def calculate_demographic_data(print_data=True):
     df = pd.read_csv('adult.data.csv')
 
     # How many of each race are represented in this dataset? This should be a Pandas series with race names as the index labels.
-    race_count = pd.Series(df.groupby(['race']).size(), index=df.race.unique()).to_list()
+    race_count = pd.Series(df.groupby(['race']).size(), index=df.race.unique())
 
     # What is the average age of men?
     average_age_men = df[df['sex'] == 'Male']['age'].mean().round(1)
@@ -34,11 +34,26 @@ def calculate_demographic_data(print_data=True):
     rich_percentage = ((num_min_workers[num_min_workers == '>50K'].count() / num_min_workers.count()) * 100).round(1)
 
     # What country has the highest percentage of people that earn >50K?
-    highest_earning_country = None
-    highest_earning_country_percentage = None
+    totalCounts = df['native-country'].value_counts().reset_index()
+    totalCounts.columns = ['native-country','total_count']
+    filtered_df = df[df['salary'] == '>50K']
+    gt50k_counts = filtered_df['native-country'].value_counts().reset_index()
+    gt50k_counts.columns = ['native-country', 'gt50k_count']
+    merged_counts = pd.merge(totalCounts, gt50k_counts, on='native-country', how='left')
+    merged_counts['gtk50_count'] = merged_counts['gt50k_count'].fillna(0)
+    merged_counts['percentage'] = (merged_counts['gt50k_count'] / merged_counts['total_count']) * 100
+    max_percentage_country = merged_counts.loc[merged_counts['percentage'].idxmax()]
+
+    highest_earning_country = max_percentage_country['native-country']
+    highest_earning_country_percentage = max_percentage_country['percentage'].round(1)
 
     # Identify the most popular occupation for those who earn >50K in India.
-    top_IN_occupation = None
+    filteredDF = df[(df['salary'] == '>50K') & (df['native-country'] == 'India')]
+    occupation_counts = filteredDF['occupation'].value_counts().reset_index()
+    occupation_counts.columns = ['occupation','count']
+    most_popular_occupation = occupation_counts.loc[occupation_counts['count'].idxmax()]
+
+    top_IN_occupation = most_popular_occupation['occupation']
 
     # DO NOT MODIFY BELOW THIS LINE
 
